@@ -14,7 +14,8 @@ def main():
         scenario.graph.timestep = timestep
 
         all_valid_events = scenario.get_all_valid_events()
-        valid_events_per_person = scenario.get_valid_events_per_person(all_valid_events)
+        valid_events_per_person = scenario.get_valid_events_per_person(
+            all_valid_events)
         valid_moves = valid_events_per_person[king]
 
         event, persons = random.choice(valid_moves)

@@ -33,62 +33,67 @@ class ReignsScenario(Scenario):
             return f
 
         def sentiment_is(l):
-            return lambda graph, persons: l(self.get_sentiment(persons[0], persons[1]))
+            return lambda graph, persons: l(
+                self.get_sentiment(persons[0], persons[1]))
 
         return [
-            Event(name='Anarchy 1',
-                  text='All is anarchy. Do you still believe science can save us?',
-                  persons=2,
-                  conditions=[
-                        speaking_to(jester),
-                        sentiment_is(lambda s: s < 1)
-                  ],
-                  effects=[
-                        record_interaction
-                  ],
-                  choices=[
-                      'Yes',
-                      'No'
-                  ],
-                  choices_result_text=[
-                      '',
-                      "You're not sure if anyone overheard."
-                  ],
-                  choices_effects=[
-                        [
-                            change_sentiment(-1)
-                        ],
-                        [
-                            # TODO this needs a way to affect sentiment of people
-                            # outside those involved here
-                            change_sentiment(1)
-                        ]
-                  ]
+            Event(
+                name='Anarchy 1',
+                text='All is anarchy. '
+                     'Do you still believe science can save us?',
+                persons=2,
+                conditions=[
+                    speaking_to(jester),
+                    sentiment_is(lambda s: s < 1)
+                ],
+                effects=[
+                    record_interaction
+                ],
+                choices=[
+                    'Yes',
+                    'No'
+                ],
+                choices_result_text=[
+                    '',
+                    "You're not sure if anyone overheard."
+                ],
+                choices_effects=[
+                    [
+                        change_sentiment(-1)
+                    ],
+                    [
+                        # TODO this needs a way to affect sentiment of people
+                        # outside those involved here
+                        change_sentiment(1)
+                    ]
+                ]
             ),
-            Event(name='Anachy 2',
-                  text='Wonderful!',
-                  persons=2,
-                  conditions=[
-                        # TODO some state which prevents this from firing more than once?
-                        speaking_to(jester),
-                        sentiment_is(lambda s: s >= 1)
-                  ],
-                  effects=[
+            Event(
+                name='Anarchy 2',
+                text='Wonderful!',
+                persons=2,
+                conditions=[
+                    # TODO some state which prevents
+                    #      this from firing more than once?
+                    speaking_to(jester),
+                    sentiment_is(lambda s: s >= 1)
+                ],
+                effects=[
                         record_interaction
-                  ],
-                  choices=[
+                ],
+                choices=[
                       "The world isn't getting warmer, not at all!",
                       'We are in total agreement.'
-                  ],
-                  choices_result_text=[
+                ],
+                choices_result_text=[
                       '',
                       ''
-                  ],
-                  choices_effects=[
+                ],
+                choices_effects=[
                         [
                         ],
                         [
                         ]
-                  ]
+                ]
             )
         ]

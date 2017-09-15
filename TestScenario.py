@@ -23,10 +23,12 @@ class TestScenario(Scenario):
                   text="Your eyes meet {}.",
                   persons=2,
                   conditions=[
-                      lambda graph, persons: persons[0].location == persons[1].location
+                      lambda graph, persons:
+                      persons[0].location == persons[1].location
                   ],
                   effects=[
-                      lambda graph, persons: self.set_interacted(persons[0], persons[1])
+                      lambda graph, persons:
+                      self.set_interacted(persons[0], persons[1])
                   ],
                   choices=[
                       "Talk",
@@ -38,22 +40,28 @@ class TestScenario(Scenario):
                   ],
                   choices_effects=[
                         [
-                            lambda graph, persons: self.add_sentiment(persons[0], persons[1], 1)
+                            lambda graph, persons:
+                            self.add_sentiment(persons[0], persons[1], 1)
                         ],
                         [
-                            lambda graph, persons: self.add_sentiment(persons[0], persons[1], -0.1)
+                            lambda graph, persons:
+                            self.add_sentiment(persons[0], persons[1], -0.1)
                         ]
                   ]
-            ),
+                  ),
             Event(name="Maybe go for tea",
                   text="You see {}. Invite {} for tea?",
                   persons=2,
                   conditions=[
-                      lambda graph, persons: persons[0].location == persons[1].location,
-                      lambda graph, persons: persons[1] in self.graph.graph[persons[0]] and graph.graph[persons[0]][persons[1]]['sentiment'] >= 3
+                      lambda graph, persons:
+                      persons[0].location == persons[1].location,
+                      lambda graph, persons:
+                      persons[1] in self.graph.graph[persons[0]] and
+                      graph.graph[persons[0]][persons[1]]['sentiment'] >= 3
                   ],
                   effects=[
-                      lambda graph, persons: self.set_interacted(persons[0], persons[1])
+                      lambda graph, persons:
+                      self.set_interacted(persons[0], persons[1])
                   ],
                   choices=[
                       "Yes",
@@ -65,31 +73,37 @@ class TestScenario(Scenario):
                   ],
                   choices_effects=[
                         [
-                            lambda graph, persons: self.add_sentiment(persons[0], persons[1], 10)
+                            lambda graph, persons:
+                            self.add_sentiment(persons[0], persons[1], 10)
                         ],
                         [
-                            lambda graph, persons: self.add_sentiment(persons[0], persons[1], -0.1)
+                            lambda graph, persons:
+                            self.add_sentiment(persons[0], persons[1], -0.1)
                         ]
                   ]
-            ),
-            Event(name="Goto Class A",
+                  ),
+            Event(name="Go to Class A",
                   text="You walk to class A",
                   persons=1,
                   conditions=[
-                      lambda graph, persons: persons[0].location != "Class A"
+                      lambda graph, persons:
+                      persons[0].location != "Class A"
                   ],
                   effects=[
-                      lambda graph, persons: self.set_location(persons[0], "Class A")
+                      lambda graph, persons:
+                      self.set_location(persons[0], "Class A")
                   ]
-                ),
-            Event(name="Goto Class B",
+                  ),
+            Event(name="Go to Class B",
                   text="You walk to class B",
                   persons=1,
                   conditions=[
-                      lambda graph, persons: persons[0].location != "Class B"
+                      lambda graph, persons:
+                      persons[0].location != "Class B"
                   ],
                   effects=[
-                      lambda graph, persons: self.set_location(persons[0], "Class B")
+                      lambda graph, persons:
+                      self.set_location(persons[0], "Class B")
                   ]
-            )
+                  )
         ]

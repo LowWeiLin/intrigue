@@ -16,7 +16,9 @@ class Scenario:
         persons = self.graph.graph.nodes()
         valid = permutations(persons, event.persons)
         if fixed_persons is not None:
-            valid = [x for x in valid if False not in [fixed_persons[i] is None or p == fixed_persons[i] for i,p in enumerate(x)]]
+            valid = [x for x in valid if False
+                     not in [fixed_persons[i] is None or p == fixed_persons[i]
+                             for i, p in enumerate(x)]]
         valid = [x for x in valid if event.conditions_check(self.graph, x)]
         return valid
 
@@ -30,7 +32,7 @@ class Scenario:
 
     def get_valid_events_per_person(self, all_valid_events=None):
         if all_valid_events is None:
-            all_valid_events = get_all_valid_events(self.graph)
+            all_valid_events = self.get_all_valid_events(self.graph)
         valid_events_per_person = {}
         for [event, persons] in all_valid_events:
             p = None
@@ -53,7 +55,8 @@ class Scenario:
 
     def get_sentiment(self, person0, person1):
         g = self.graph.graph
-        if person0 not in g or person1 not in g[person0] or "sentiment" not in g[person0][person1]:
+        if person0 not in g or person1 not in g[person0] \
+                or "sentiment" not in g[person0][person1]:
             return 0
         return self.graph.graph[person0][person1]["sentiment"]
 

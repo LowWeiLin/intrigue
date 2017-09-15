@@ -4,6 +4,7 @@ import random
 
 random.seed(1234567890)
 
+
 class SocialGraph:
     def __init__(self, scenario_name="scenario name"):
         self.scenario_name = scenario_name
@@ -11,7 +12,8 @@ class SocialGraph:
         self.timestep = 0
 
     def __repr__(self):
-        sorted_edges = sorted(self.graph.edges(data=True), key=lambda x: x[1].name)
+        sorted_edges = sorted(self.graph.edges(data=True),
+                              key=lambda x: x[1].name)
         sorted_edges = sorted(sorted_edges, key=lambda x: x[0].name)
 
         return "Scenario: {}\nPersons:\n{}\nRelations:\n{}".format(
@@ -28,7 +30,7 @@ class SocialGraph:
     def update_relation(self, personA, personB, relation):
         if personB not in self.graph[personA]:
             self.graph.add_edge(personA, personB)
-        for k,v in relation.items():
+        for k, v in relation.items():
             self.graph[personA][personB][k] = v
 
 
