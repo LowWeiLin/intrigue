@@ -16,23 +16,26 @@ var Game = {
     this.display = new ROT.Display({
       spacing: 1.1
     });
-    document.body.appendChild(this.display.getContainer());
+    $('#game').append(this.display.getContainer());
+    // document.body.appendChild();
 
     this._generateMap();
 
     var scheduler = new ROT.Scheduler.Simple();
     scheduler.add(this.player, true);
-    scheduler.add(this.pedro, true);
+    // scheduler.add(this.pedro, true);
 
     this.engine = new ROT.Engine(scheduler);
     this.engine.start();
   },
 
   _generateMap: function() {
+    // width, height, options. defaults to those constants above
     var digger = new ROT.Map.Digger();
     var freeCells = [];
 
     var digCallback = function(x, y, value) {
+      // walls are solid (assuming underground). value is 1 for those
       if (value) {
         return;
       }
@@ -47,7 +50,7 @@ var Game = {
     this._drawWholeMap();
 
     this.player = this._createBeing(Player, freeCells);
-    this.pedro = this._createBeing(Pedro, freeCells);
+    // this.pedro = this._createBeing(Pedro, freeCells);
   },
 
   _createBeing: function(what, freeCells) {
@@ -97,8 +100,9 @@ Player.prototype.getY = function() {
 }
 
 Player.prototype.act = function() {
-  Game.engine.lock();
-  window.addEventListener("keydown", this);
+  // Game.engine.lock();
+  // window.addEventListener("keydown", this);
+  pushInput(this);
 }
 
 Player.prototype.handleEvent = function(e) {
@@ -136,8 +140,40 @@ Player.prototype.handleEvent = function(e) {
   this._x = newX;
   this._y = newY;
   this._draw();
-  window.removeEventListener("keydown", this);
+  popInput();
+  // window.removeEventListener("keydown", this);
+  // Game.engine.unlock();
+}
+
+Array.prototype.peek = function() {
+  return this[this.length - 1];
+};
+
+var inputStack = [];
+
+// handler is an object with the handleEvent function
+// you must lock explicitly before calling this, and unlock in your handleEvent function
+function pushInput(handler) {
+  if (inputStack.length > 0) {
+    // the current handler is on top of the stack
+    current = inputStack.peek();
+    window.removeEventListener('keydown', current);
+  }
+  inputStack.push(handler);
+  Game.engine.lock();
+  window.addEventListener("keydown", handler);
+}
+
+function popInput() {
+  if (inputStack.length === 0) {
+    throw 'cannot pop empty input stack';
+  }
+  window.removeEventListener('keydown', inputStack.pop());
   Game.engine.unlock();
+
+  if (inputStack.length > 0) {
+    window.addEventListener('keydown', inputStack.peek());
+  }
 }
 
 Player.prototype._draw = function() {
@@ -147,13 +183,34 @@ Player.prototype._draw = function() {
 Player.prototype._checkBox = function() {
   var key = this._x + "," + this._y;
   if (Game.map[key] != "*") {
-    alert("There is no box here!");
+    $('#dialogue').html("There is no box here! [press space to continue]");
+    pushInput({
+      handleEvent(e) {
+        // paging
+        var code = e.keyCode;
+        if (code == 13 || code == 32) {
+          $('#dialogue').html('');
+          popInput();
+        }
+      }
+    })
   } else if (key == Game.ananas) {
     alert("Hooray! You found an ananas and won this game.");
+    // this is an explicit lock
     Game.engine.lock();
     window.removeEventListener("keydown", this);
   } else {
-    alert("This box is empty :-(");
+    $('#dialogue').html("This box is empty :-( [press space to continue]");
+    pushInput({
+      handleEvent(e) {
+        // paging
+        var code = e.keyCode;
+        if (code == 13 || code == 32) {
+          $('#dialogue').html('');
+          popInput();
+        }
+      }
+    });
   }
 }
 
