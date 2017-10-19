@@ -23,7 +23,7 @@ var Game = {
 
     var scheduler = new ROT.Scheduler.Simple();
     scheduler.add(this.player, true);
-    // scheduler.add(this.pedro, true);
+    scheduler.add(this.pedro, true);
 
     this.engine = new ROT.Engine(scheduler);
     this.engine.start();
@@ -50,7 +50,7 @@ var Game = {
     this._drawWholeMap();
 
     this.player = this._createBeing(Player, freeCells);
-    // this.pedro = this._createBeing(Pedro, freeCells);
+    this.pedro = this._createBeing(Pedro, freeCells);
   },
 
   _createBeing: function(what, freeCells) {
@@ -105,30 +105,84 @@ Player.prototype.act = function() {
   pushInput(this);
 }
 
+function detectMobile() {
+ return window.innerWidth <= 1000 && window.innerHeight <= 1000;
+} 
+
 Player.prototype.handleEvent = function(e) {
-  var code = e.keyCode;
-  if (code == 13 || code == 32) {
-    this._checkBox();
-    return;
+
+  
+  
+  function directionFromTouch(e) {
+    var x = e.changedTouches[0].clientX;
+    var y = e.changedTouches[0].clientY;
+    var maxX = $('#game').width();
+    var maxY = $('#game').height();
+
+    var left = x < maxX / 3;
+    var right = x > maxX * 2/3;
+    var top = y < maxY / 3;
+    var bottom = y > maxY * 2 / 3;
+
+    var direction;
+    if (top) {
+      if (!left && !right) {
+        direction = 0;
+      } else if (left) {
+        direction = 7;
+      } else {
+        direction = 1;
+      }
+    } else if (bottom) {
+      if (!left && !right) {
+        direction = 4;
+      } else if (left) {
+        direction = 5;
+      } else {
+        direction = 3;
+      }
+    } else {
+      if (!left && !right) {
+        // TODO maybe this should be for opening boxes
+        throw 'invalid direction';
+      } else if (left) {
+        direction = 6;
+      } else {
+        direction = 2;
+      }
+    }
+    return ROT.DIRS[8][direction];
   }
 
-  var keyMap = {};
-  keyMap[38] = 0;
-  keyMap[33] = 1;
-  keyMap[39] = 2;
-  keyMap[34] = 3;
-  keyMap[40] = 4;
-  keyMap[35] = 5;
-  keyMap[37] = 6;
-  keyMap[36] = 7;
+  function directionFromMouse(e) {
 
-  /* one of numpad directions? */
-  if (!(code in keyMap)) {
-    return;
+    var keyMap = {};
+    keyMap[38] = 0;
+    keyMap[33] = 1;
+    keyMap[39] = 2;
+    keyMap[34] = 3;
+    keyMap[40] = 4;
+    keyMap[35] = 5;
+    keyMap[37] = 6;
+    keyMap[36] = 7;
+
+    var code = e.keyCode;
+    /* one of numpad directions? */
+    if (!(code in keyMap)) {
+      return;
+    }
+
+    return ROT.DIRS[8][keyMap[code]];
   }
 
   /* is there a free space? */
-  var dir = ROT.DIRS[8][keyMap[code]];
+  var isCheckingBox = detectMobile() ? false : (e.keyCode == 13 || e.keyCode == 32);
+  if (isCheckingBox) {
+    this._checkBox();
+    return;
+  }
+  
+  var dir = detectMobile() ? directionFromTouch(e) : directionFromMouse(e);
   var newX = this._x + dir[0];
   var newY = this._y + dir[1];
   var newKey = newX + "," + newY;
@@ -154,25 +208,29 @@ var inputStack = [];
 // handler is an object with the handleEvent function
 // you must lock explicitly before calling this, and unlock in your handleEvent function
 function pushInput(handler) {
+
+  var eventType = detectMobile() ? 'touchstart' : 'keydown';
   if (inputStack.length > 0) {
     // the current handler is on top of the stack
     current = inputStack.peek();
-    window.removeEventListener('keydown', current);
+    window.removeEventListener(eventType, current);
   }
   inputStack.push(handler);
   Game.engine.lock();
-  window.addEventListener("keydown", handler);
+  // window.addEventListener("keydown", handler);
+  window.addEventListener(eventType, handler);
 }
 
 function popInput() {
+  var eventType = detectMobile() ? 'touchstart' : 'keydown';
   if (inputStack.length === 0) {
     throw 'cannot pop empty input stack';
   }
-  window.removeEventListener('keydown', inputStack.pop());
+  window.removeEventListener(eventType, inputStack.pop());
   Game.engine.unlock();
 
   if (inputStack.length > 0) {
-    window.addEventListener('keydown', inputStack.peek());
+    window.addEventListener(eventType, inputStack.peek());
   }
 }
 
