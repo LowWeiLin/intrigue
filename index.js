@@ -15,15 +15,20 @@ var Game = {
 
   init: function() {
 
-    // the defaults. change depending on device
-    // ROT.DEFAULT_WIDTH = 80;
-    // ROT.DEFAULT_HEIGHT = 25;
+    if (detectMobile()) {
+      // desktop default: 80 25
+      ROT.DEFAULT_WIDTH = 30;
+      ROT.DEFAULT_HEIGHT = 35;
+    }
+    console.log('mobile', detectMobile(), ROT.DEFAULT_WIDTH, ROT.DEFAULT_HEIGHT);
 
     this.display = new ROT.Display({
       spacing: 1.1
     });
     $('#game').append(this.display.getContainer());
-    // document.body.appendChild();
+
+    // prevent accidental selection of page elements
+    this.display.getContainer().onselectstart = () => false;
 
     this._generateMap();
 

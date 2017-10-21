@@ -1,0 +1,14 @@
+
+* {
+  background-color: black;
+}
+
+div {
+  margin: 0 auto;
+  display: table; /* hack to centre without constraining width */
+  color: grey;
+}
+
+#game {
+  border: solid grey 1px;
+}
