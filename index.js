@@ -106,20 +106,16 @@ Player.prototype.getY = function() {
 }
 
 Player.prototype.act = function() {
-  // Game.engine.lock();
-  // window.addEventListener("keydown", this);
-  pushInput(this);
+  pushInput(this.handler());
 }
 
 function detectMobile() {
  return window.innerWidth <= 1000 && window.innerHeight <= 1000;
-} 
+}
 
-Player.prototype.handleEvent = function(e) {
+Player.prototype.handler = function() {
 
-  
-  
-  function directionFromTouch(e) {
+  let directionFromTouch = e => {
     var x = e.changedTouches[0].clientX;
     var y = e.changedTouches[0].clientY;
     var maxX = $('#game').width();
@@ -160,8 +156,24 @@ Player.prototype.handleEvent = function(e) {
     return ROT.DIRS[8][direction];
   }
 
-  function directionFromMouse(e) {
+  let directionFromMouse = e => {
 
+    let there = vec2.fromValues(...Game.display.eventToPosition(e));
+    let current = vec2.fromValues(this.getX(), this.getY());
+
+    // what a crazy api
+    let result = vec2.create();
+    vec2.sub(result, there, current);
+
+    // discretise
+    result = vec2.normalize(result, result);
+    result[0] = Math.round(result[0]);
+    result[1] = Math.round(result[1]);
+
+    return result;
+  }
+
+  let directionFromKeyboard = e => {
     var keyMap = {};
     keyMap[38] = 0;
     keyMap[33] = 1;
@@ -181,63 +193,114 @@ Player.prototype.handleEvent = function(e) {
     return ROT.DIRS[8][keyMap[code]];
   }
 
-  /* is there a free space? */
-  var isCheckingBox = detectMobile() ? false : (e.keyCode == 13 || e.keyCode == 32);
-  if (isCheckingBox) {
-    this._checkBox();
-    return;
-  }
-  
-  var dir = detectMobile() ? directionFromTouch(e) : directionFromMouse(e);
-  var newX = this._x + dir[0];
-  var newY = this._y + dir[1];
-  var newKey = newX + "," + newY;
-  if (!(newKey in Game.map)) {
-    return;
-  }
+  let done = (e, dir) => {
+    // TODO abstract over keycode handling, as all handlers call this
+    if (!dir && e.keyCode != 13 && e.keyCode != 32) {
+      // this catches the case where a key other than a direction is pressed
+      // (dir is undefined) and the key wasn't space or enter. should go away
+      // when we abstract over keycode handling
+      return;
+    }
 
-  Game.display.draw(this._x, this._y, Game.map[this._x + "," + this._y]);
-  this._x = newX;
-  this._y = newY;
-  this._draw();
-  popInput();
-  // window.removeEventListener("keydown", this);
-  // Game.engine.unlock();
+    /* is there a free space? */
+    var isCheckingBox = detectMobile() ? false : (e.keyCode == 13 || e.keyCode == 32);
+    if (isCheckingBox) {
+      this._checkBox();
+      return;
+    }
+
+    // var dir = detectMobile() ? directionFromTouch(e) : directionFromMouse(e);
+    var newX = this._x + dir[0];
+    var newY = this._y + dir[1];
+    var newKey = newX + "," + newY;
+    if (!(newKey in Game.map)) {
+      return;
+    }
+
+    Game.display.draw(this._x, this._y, Game.map[this._x + "," + this._y]);
+    this._x = newX;
+    this._y = newY;
+    this._draw();
+    popInput();
+  };
+
+  return {
+    keydown: e => done(e.originalEvent, directionFromKeyboard(e.originalEvent)),
+    mousedown: e => done(e.originalEvent, directionFromMouse(e.originalEvent)),
+    touchstart: e => done(e.originalEvent, directionFromTouch(e.originalEvent)),
+  };
 }
 
 Array.prototype.peek = function() {
   return this[this.length - 1];
 };
 
+let dialogueContinue = (function() {
+
+  function done() {
+    $('#dialogue').html('');
+    popInput();
+  }
+
+  return {
+    keydown: e => {
+      var code = e.keyCode;
+      if (code == 13 || code == 32) {
+        done();
+      }
+    },
+    mousedown: e => done(),
+    touchstart: e => done(),
+  };
+})();
+
+// Stack {name: handler}
 var inputStack = [];
+var allowedEvents = detectMobile() ? ['touchstart'] : ['mousedown', 'keydown'];
 
 // handler is an object with the handleEvent function
-// you must lock explicitly before calling this, and unlock in your handleEvent function
-function pushInput(handler) {
+function pushInput(handlers) {
 
-  var eventType = detectMobile() ? 'touchstart' : 'keydown';
   if (inputStack.length > 0) {
-    // the current handler is on top of the stack
     current = inputStack.peek();
-    window.removeEventListener(eventType, current);
+
+    // remove the current listeners; we can restore them later
+    for (let k in current) {
+      $(window).off(k);
+    }
   }
-  inputStack.push(handler);
+
   Game.engine.lock();
-  // window.addEventListener("keydown", handler);
-  window.addEventListener(eventType, handler);
+
+  // store new listeners and enable them
+  var handler = allowedEvents.reduce((t, c) => {t[c] = handlers[c]; return t;}, {});
+  inputStack.push(handler);
+
+  for (let k of allowedEvents) {
+    $(window).on(k, handlers[k]);
+  }
 }
 
 function popInput() {
-  var eventType = detectMobile() ? 'touchstart' : 'keydown';
   if (inputStack.length === 0) {
     throw 'cannot pop empty input stack';
   }
-  window.removeEventListener(eventType, inputStack.pop());
-  Game.engine.unlock();
 
-  if (inputStack.length > 0) {
-    window.addEventListener(eventType, inputStack.peek());
+  // get rid of the current event handlers
+  for (let k in inputStack.pop()) {
+    $(window).off(k);
   }
+
+  // restore the previous handlers if there were any
+  if (inputStack.length > 0) {
+    for (let k of allowedEvents) {
+      $(window).on(k, inputStack.peek()[k]);
+    }
+  }
+
+  // this has to come last as unlocking causes the player to act again,
+  // and that adds more handlers
+  Game.engine.unlock();
 }
 
 Player.prototype._draw = function() {
@@ -248,33 +311,13 @@ Player.prototype._checkBox = function() {
   var key = this._x + "," + this._y;
   if (Game.map[key] != "*") {
     $('#dialogue').html("There is no box here! [press space to continue]");
-    pushInput({
-      handleEvent(e) {
-        // paging
-        var code = e.keyCode;
-        if (code == 13 || code == 32) {
-          $('#dialogue').html('');
-          popInput();
-        }
-      }
-    })
+    pushInput(dialogueContinue);
   } else if (key == Game.ananas) {
     alert("Hooray! You found an ananas and won this game.");
-    // this is an explicit lock
     Game.engine.lock();
-    window.removeEventListener("keydown", this);
   } else {
     $('#dialogue').html("This box is empty :-( [press space to continue]");
-    pushInput({
-      handleEvent(e) {
-        // paging
-        var code = e.keyCode;
-        if (code == 13 || code == 32) {
-          $('#dialogue').html('');
-          popInput();
-        }
-      }
-    });
+    pushInput(dialogueContinue);
   }
 }
 
