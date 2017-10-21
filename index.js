@@ -1,4 +1,10 @@
 
+if (detectMobile()) {
+  console.log = function(...args) {
+    $('#debug').prepend($('<p></p>').text(args.join(' ') + '\n'));
+  };
+}
+
 var Game = {
   display: null,
   map: {},
